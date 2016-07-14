@@ -14,8 +14,11 @@ public class BPMDetect {
      * @return The tempo in BPM
      * @throws IOException
      * @throws UnsupportedAudioFileException
+     * @throws BPMNotRecognizedException if the tempo of the input file could not be determined.
      */
-    public static int detectBPM(File file) throws IOException, UnsupportedAudioFileException {
+    public static int detectBPM(File file) throws IOException,
+            UnsupportedAudioFileException, BPMNotRecognizedException {
+
         PeakDetector peakDetector = new PeakDetector();
         peakDetector.setInputURL(file.toURI().toURL());
 
@@ -27,7 +30,7 @@ public class BPMDetect {
             threshold -= 0.1;
         }
 
-        if(bpm == null) return 0;
+        if(bpm == null) throw new BPMNotRecognizedException();
 
         return (int)Math.round(bpm);
     }
