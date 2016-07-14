@@ -1,4 +1,6 @@
-import processor.PeakDetector;
+package com.producerspoint;
+
+import com.producerspoint.processor.PeakDetector;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;

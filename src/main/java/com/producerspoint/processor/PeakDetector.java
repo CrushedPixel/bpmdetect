@@ -1,4 +1,4 @@
-package processor;
+package com.producerspoint.processor;
 
 import at.ofai.music.beatroot.Agent;
 import at.ofai.music.beatroot.AgentList;
