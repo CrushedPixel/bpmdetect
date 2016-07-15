@@ -40,4 +40,19 @@ public class BPMDetect {
         return peakDetector.getBeats();
     }
 
+    /**
+     * Detects the duration of a wav file.
+     * @param file The input file
+     * @return The duration in seconds
+     * @throws IOException
+     * @throws UnsupportedAudioFileException
+     */
+    public static double getDurationInSeconds(File file) throws IOException,
+            UnsupportedAudioFileException {
+
+        PeakDetector peakDetector = new PeakDetector(file);
+
+        return peakDetector.getDurationInSeconds();
+    }
+
 }

@@ -80,6 +80,10 @@ public class PeakDetector extends AudioProcessor {
         return beats;
     }
 
+    public double getDurationInSeconds() {
+        return hopTime * totalFrames;
+    }
+
     protected void initialize() {
         detected = false;
 
