@@ -1,4 +1,4 @@
-package com.producerspoint.processor;
+package com.producerspoint.bpmdetect.processor;
 
 import at.ofai.music.beatroot.Agent;
 import at.ofai.music.beatroot.AgentList;
@@ -6,10 +6,12 @@ import at.ofai.music.beatroot.AudioProcessor;
 import at.ofai.music.util.Event;
 import at.ofai.music.util.EventList;
 import at.ofai.music.util.Peaks;
+import com.producerspoint.bpmdetect.BPMNotRecognizedException;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -20,7 +22,9 @@ public class PeakDetector extends AudioProcessor {
     private static Method BEAT_INDUCTION;
     private static Method FILL_BEATS;
 
-    private boolean initialized = false;
+    private boolean detected = false;
+
+    private EventList beats = new EventList();
 
     static {
         try {
@@ -32,6 +36,16 @@ public class PeakDetector extends AudioProcessor {
         } catch(Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public PeakDetector() {}
+
+    public PeakDetector(File file) throws IOException, UnsupportedAudioFileException {
+        this.setInputFile(file);
+    }
+
+    public void setInputFile(File file) throws IOException, UnsupportedAudioFileException {
+        this.setInputURL(file.toURI().toURL());
     }
 
     public void setInputURL(URL url) throws IOException, UnsupportedAudioFileException {
@@ -50,11 +64,25 @@ public class PeakDetector extends AudioProcessor {
         }
 
         this.init();
+        this.initialize();
+        this.detectPeaks();
+    }
 
-        initialized = false;
+    public int detectBPM() throws BPMNotRecognizedException {
+        Double bpm = getBPM();
+
+        if(bpm == null || bpm == 0) throw new BPMNotRecognizedException();
+
+        return (int)Math.round(bpm);
+    }
+
+    public EventList getBeats() {
+        return beats;
     }
 
     protected void initialize() {
+        detected = false;
+
         //process the file
         do {
             if(this.pcmInputStream == null) {
@@ -64,21 +92,29 @@ public class PeakDetector extends AudioProcessor {
 
             this.processFrame();
         } while(!Thread.currentThread().isInterrupted());
-
-        initialized = true;
     }
 
-    public Double getBPM(double threshold, double decayRate) {
-        if(!initialized) initialize();
+    protected void detectPeaks() {
+        if(detected) return;
 
-        this.findOnsets(threshold, decayRate);
+        double threshold = 0.8;
+        double decayRate = 0.9;
 
-        EventList eventList = findBeats();
-        if(eventList.size() == 0) return null;
+        while(beats.size() == 0 && threshold > 0) {
+            this.findOnsets(threshold, decayRate);
+            beats = findBeats();
+            threshold -= 0.1;
+        }
+
+        detected = beats.size() > 0;
+    }
+
+    protected Double getBPM() {
+        if(beats.size() < 2) return null;
 
         Double lastTimestamp = null;
 
-        Iterator<Event> it = eventList.iterator();
+        Iterator<Event> it = beats.iterator();
 
         int total = 0;
         double sum = 0;
